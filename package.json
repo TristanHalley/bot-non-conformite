@@ -1,0 +1,25 @@
+{
+  "name": "bot-non-conformite",
+  "version": "1.0.0-20260716-152107",
+  "repository": {
+    "type": "git",
+    "url": "https://....git"
+  },
+  "bin": {
+    "compliance-audit": "bin/cli.mjs"
+  },
+  "scripts": {
+    "check": "node ./bin/check.mjs",
+    "setup": "node ./bin/setup.mjs"
+  },
+  "main": "src/main.mjs",
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "c8": "11.0.0",
+    "cross-env": "10.1.0",
+    "eslint": "10.7.0",
+    "esmock": "2.7.6",
+    "mocha-sonarqube-reporter": "1.0.2"
+  }
+}

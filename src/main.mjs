@@ -1,0 +1,1 @@
+import '../bin/cli.js';
