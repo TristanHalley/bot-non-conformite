@@ -1,7 +1,11 @@
 import fs from 'fs';
 import path from 'path';
+import {safeExec} from "../../utils/execHelper.js";
+import file from "../../utils/file.mjs";
+import gitHelper from "../../utils/gitHelper.js";
 
-export async function analyzeCheckProject(repoPath) {
+
+export async function analyzeCheckProject(urlGitrepo) {
     const result = {
         name: 'check-project Integration',
         passed: true,
@@ -10,8 +14,9 @@ export async function analyzeCheckProject(repoPath) {
     };
 
     try {
-        const packageJsonPath = path.join(repoPath, 'package.json');
-        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+
+        const packageJsonPath = file.getFile('package.json');
+        const packageJson = JSON.parse(await gitHelper.readFile(urlGitrepo, 'package.json'));
         const devDeps = packageJson.devDependencies || {};
         if (!devDeps['@CHANGEME/check-project']) {
             result.errors.push('Missing @CHANGEME/check-project');

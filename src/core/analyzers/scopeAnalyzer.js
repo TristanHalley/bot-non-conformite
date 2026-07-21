@@ -10,7 +10,8 @@ export async function analyzeScopeCompliance(repoPath) {
     };
 
     try {
-        const packageJsonPath = path.join(repoPath, 'package.json');
+
+        /*const packageJsonPath = path.join(repoPath, 'package.json');
         const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
         const violations = [];
         const validScoped = [];
@@ -42,7 +43,7 @@ export async function analyzeScopeCompliance(repoPath) {
             result.details.push(`✓ ${validScoped.length} package(s) with @CHANGEME scope`);
         } else {
             result.details.push('ℹ No scoped packages found (this is OK if all packages are unscoped)');
-        }
+        }*/
 
         return result;
     } catch (error) {

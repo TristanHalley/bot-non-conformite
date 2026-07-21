@@ -3,6 +3,7 @@ import { join } from 'path';
 import {safeExec} from "../../utils/execHelper.js";
 import {COMMANDS} from "../constants.js";
 import {getRemoteName} from "../../utils/getRemoteName.js";
+import {isFileTracked} from "../../utils/gitHelper.js";
 
 export async function analyzeLockFile(repoPath) {
     const result = {
@@ -13,14 +14,12 @@ export async function analyzeLockFile(repoPath) {
     };
 
     try {
-        const lockFilePath = join(repoPath, 'package-lock.json');
-
-        if (!existsSync(lockFilePath)) {
+        if (!isFileTracked(repoPath, 'package-lock.json')) {
             result.passed = false;
-            result.errors.push('package-lock.json file is missing');
+            result.errors.push('package-lock.json is not tracked by Git');
+        } else {
+            result.details.push('✓ package-lock.json is tracked by Git');
         }
-
-        const { stdout } = safeExec('git', ['remote', 'get-url', repoPath]);
 
 
         return result;

@@ -23,3 +23,11 @@ export function isFileTracked(repoPath, fileName) {
     return false;
   }
 }
+
+export function readFile(repoPath, fileName) {
+  try {
+    return safeExec('git', ['show', fileName], { cwd: repoPath });
+  } catch (error) {
+    throw new Error(`Error reading file ${fileName} from Git: ${error.message}`);
+  }
+}
