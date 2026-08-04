@@ -23,7 +23,9 @@ default_events:
   # - fork
   # - gollum
   # - issue_comment
+  - schedule.repository
   - push
+  - repository_dispatch
 # - label
 # - milestone
 # - member
