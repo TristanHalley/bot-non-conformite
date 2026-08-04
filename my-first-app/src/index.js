@@ -39,7 +39,7 @@ export default (app) => {
 
         const packageLockText = await loadJsonFile(context, "package-lock.json", sha);
         const report = evaluateCompliance(packageJson, Boolean(packageLockText));
-
+        console.log(report);
         await context.octokit.rest.checks.create(
             context.repo({
                 name: "Conformité du dépôt",
