@@ -1,5 +1,6 @@
 ﻿name: Daily compliance dispatch
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 0 * * *' # tous les jours à 00:00 UTC
 jobs:
