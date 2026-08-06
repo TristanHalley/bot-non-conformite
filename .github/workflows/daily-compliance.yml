@@ -2,7 +2,7 @@
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * *' # tous les jours à 00:00 UTC
+    - cron: '0 10 * * *' # tous les jours à 10:00 UTC + 2h (Paris)
 jobs:
   dispatch:
     runs-on: ubuntu-latest
