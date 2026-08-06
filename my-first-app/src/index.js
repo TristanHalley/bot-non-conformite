@@ -1,4 +1,5 @@
 import {evaluateCompliance, renderComplianceReport} from "./compliance.js";
+import fs from "node:fs";
 
 async function loadJsonFile(context, path, ref) {
     try {
@@ -25,7 +26,7 @@ async function loadJsonFile(context, path, ref) {
 
 export default (app) => {
     // Run on push and daily schedule (schedule.repository). Configure cron in the App settings.
-    app.on(["push", "repository_dispatch"], async (context) => {
+    app.on(["push", "issues.opened", "repository_dispatch"], async (context) => {
         const sha = context.payload.after;
         const packageJsonText = await loadJsonFile(context, "package.json", sha);
         let packageJson = null;
@@ -41,21 +42,6 @@ export default (app) => {
         const packageLockText = await loadJsonFile(context, "package-lock.json", sha);
         const report = evaluateCompliance(packageJson, Boolean(packageLockText));
         console.log(report);
-        /*await context.octokit.rest.checks.create(
-            context.repo({
-                name: "Conformité du dépôt",
-                head_sha: sha,
-                status: "completed",
-                conclusion: report.conclusion,
-                output: {
-                    title: "Rapport de conformité Markdown",
-                    summary: renderComplianceReport(report, {
-                        owner: context.payload.repository.owner.login,
-                        repo: context.payload.repository.name,
-                        sha,
-                    }),
-                },
-            }),
-        );*/
+        fs.writeFileSync("report.md", renderComplianceReport(report, {owner: context.payload.repository.owner.login, repo: context.payload.repository.name, sha}));
     });
 };
