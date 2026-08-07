@@ -38,7 +38,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
         run: |
-          mkdir -p site
+          mkdir -p public
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           import path from 'node:path';
@@ -65,7 +65,13 @@ jobs:
             </tr>
           `).join('');
 
-          const failingRows = report.rows.filter((row) => !row.ok).map((row) => `<li><strong>${escapeHtml(row.label)}</strong> : ${escapeHtml(row.detail)}</li>`).join('');
+          const failingRows = report.rows.filter((row) => !row.ok)
+            .map((row) => `<li><strong>${escapeHtml(row.label)}</strong> : ${escapeHtml(row.detail)}</li>`)
+            .join('');
+
+          const body = report.conclusion === 'success'
+            ? '<p class="status-ok">Aucune non-conformite detectee.</p>'
+            : `<p class="status-ko">Non-conformites detectees :</p><ul>${failingRows}</ul>`;
 
           const html = `<!doctype html>
           <html lang="fr">
@@ -96,19 +102,18 @@ jobs:
               </tbody>
             </table>
             <h2>Resultat</h2>
-            ${report.conclusion === 'success'
-              ? '<p class="status-ok">Aucune non-conformite detectee.</p>'
-              : `<p class="status-ko">Non-conformites detectees :</p><ul>${failingRows}</ul>`}
+            ${body}
           </body>
           </html>`;
 
-          fs.writeFileSync(path.resolve('site/index.html'), html);
+          fs.writeFileSync(path.resolve('public/index.html'), html);
+          fs.writeFileSync(path.resolve('public/.nojekyll'), '');
           NODE
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: my-first-app/site
+          path: my-first-app/public
 
       - name: Deploy to GitHub Pages
         id: deployment
