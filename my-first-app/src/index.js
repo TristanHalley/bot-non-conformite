@@ -42,6 +42,6 @@ export default (app) => {
         const packageLockText = await loadJsonFile(context, "package-lock.json", sha);
         const report = evaluateCompliance(packageJson, Boolean(packageLockText));
         console.log(report);
-        fs.writeFileSync("report.md", renderComplianceReport(report, {owner: context.payload.repository.owner.login, repo: context.payload.repository.name, sha}));
+        fs.writeFileSync("reports/report.md", renderComplianceReport(report, {owner: context.payload.repository.owner.login, repo: context.payload.repository.name, sha}));
     });
 };
