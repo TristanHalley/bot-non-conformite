@@ -2,20 +2,26 @@ name: Daily compliance report
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 10 * * *' # tous les jours 10:00 UTC+2 (Paris)
+    - cron: '0 10 * * *'
 permissions:
   contents: read
+  pages: write
+  id-token: write
 jobs:
-  compliance:
+  build:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     defaults:
       run:
         working-directory: my-first-app
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -27,35 +33,83 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate compliance report
+      - name: Generate Pages site
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
         run: |
-          mkdir -p reports
+          mkdir -p site
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           import path from 'node:path';
-          import { evaluateCompliance, renderComplianceReport } from './src/compliance.js';
+          import { evaluateCompliance } from './src/compliance.js';
 
           const packageJson = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8'));
           const hasPackageLock = fs.existsSync(path.resolve('package-lock.json'));
           const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
+          const sha = process.env.GITHUB_SHA;
           const report = evaluateCompliance(packageJson, hasPackageLock);
-          const markdown = renderComplianceReport(report, {
-            owner,
-            repo,
-            sha: process.env.GITHUB_SHA,
-          });
 
-          fs.writeFileSync(path.resolve('reports/report.md'), `${markdown}\n`);
+          const escapeHtml = (value) => String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+
+          const rows = report.rows.map((row) => `
+            <tr>
+              <td>${escapeHtml(row.label)}</td>
+              <td>${row.ok ? 'OK' : 'KO'}</td>
+              <td>${escapeHtml(row.detail)}</td>
+            </tr>
+          `).join('');
+
+          const failingRows = report.rows.filter((row) => !row.ok).map((row) => `<li><strong>${escapeHtml(row.label)}</strong> : ${escapeHtml(row.detail)}</li>`).join('');
+
+          const html = `<!doctype html>
+          <html lang="fr">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Rapport de conformite</title>
+            <style>
+              body { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.5; color: #111827; }
+              .meta { color: #4b5563; margin-bottom: 1.5rem; }
+              table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+              th, td { border: 1px solid #d1d5db; padding: .75rem; vertical-align: top; text-align: left; }
+              th { background: #f3f4f6; }
+              .status-ok { color: #047857; }
+              .status-ko { color: #b91c1c; }
+              code { background: #f3f4f6; padding: .125rem .25rem; border-radius: .25rem; }
+            </style>
+          </head>
+          <body>
+            <h1>Rapport de conformite</h1>
+            <p class="meta"><strong>Depot</strong> : <code>${escapeHtml(owner)}/${escapeHtml(repo)}</code><br><strong>SHA</strong> : <code>${escapeHtml(sha)}</code></p>
+            <table>
+              <thead>
+                <tr><th>Regle</th><th>Statut</th><th>Detail</th></tr>
+              </thead>
+              <tbody>
+                ${rows}
+              </tbody>
+            </table>
+            <h2>Resultat</h2>
+            ${report.conclusion === 'success'
+              ? '<p class="status-ok">Aucune non-conformite detectee.</p>'
+              : `<p class="status-ko">Non-conformites detectees :</p><ul>${failingRows}</ul>`}
+          </body>
+          </html>`;
+
+          fs.writeFileSync(path.resolve('site/index.html'), html);
           NODE
 
-      - name: Publish report in job summary
-        run: cat reports/report.md >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Archive report
-        uses: actions/upload-artifact@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: compliance-report
-          path: my-first-app/reports/report.md
+          path: my-first-app/site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
