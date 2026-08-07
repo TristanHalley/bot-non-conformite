@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '0 10 * * *' # tous les jours 10:00 UTC+2 (Paris)
 permissions:
-  contents: write
+  contents: read
 jobs:
   compliance:
     runs-on: ubuntu-latest
@@ -54,14 +54,8 @@ jobs:
       - name: Publish report in job summary
         run: cat reports/report.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Commit report
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add reports/report.md
-          if git diff --cached --quiet; then
-            echo "No report changes"
-          else
-            git commit -m "Update compliance report [skip ci]"
-            git push origin HEAD:${{ github.ref_name }}
-          fi
+      - name: Archive report
+        uses: actions/upload-artifact@v4
+        with:
+          name: compliance-report
+          path: my-first-app/reports/report.md
